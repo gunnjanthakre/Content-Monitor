@@ -2,6 +2,13 @@ import re
 
 
 def compute_score(keyword: str, title: str, body: str) -> int:
+    """
+    Score a keyword match against a content item.
+      100 — exact whole-word match in title
+       70 — partial/substring match in title
+       40 — keyword found only in body
+        0 — no match (no flag should be created)
+    """
     kw = keyword.lower().strip()
     title_lower = title.lower()
     body_lower = body.lower()

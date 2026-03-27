@@ -94,3 +94,35 @@ class TestAPIViews(TestCase):
         r = self.client.post("/scan/", {"source": "mock"}, content_type="application/json")
         self.assertEqual(r.status_code, 200)
         self.assertGreater(r.json()["flags_created"], 0)
+
+class TestScoringIntegration(TestCase):
+    """Verify scores are stored correctly on flags after a real scan."""
+
+    def test_exact_title_match_stores_score_100(self):
+        Keyword.objects.create(name="django")
+        ScanService(source="mock").run()
+        flag = Flag.objects.filter(
+            keyword__name="django",
+            content_item__title="Learn Django Fast"
+        ).first()
+        self.assertIsNotNone(flag)
+        self.assertEqual(flag.score, 100)
+
+    def test_body_only_match_stores_score_40(self):
+        Keyword.objects.create(name="python")
+        ScanService(source="mock").run()
+        # "Learn Django Fast" body contains "python" but title does not
+        flag = Flag.objects.filter(
+            keyword__name="python",
+            content_item__title="Learn Django Fast"
+        ).first()
+        self.assertIsNotNone(flag)
+        self.assertEqual(flag.score, 40)
+
+    def test_scan_summary_counts_are_accurate(self):
+        Keyword.objects.create(name="django")
+        result = ScanService(source="mock").run()
+        self.assertEqual(result["content_items_processed"], 6)
+        self.assertEqual(result["keywords_active"], 1)
+        self.assertEqual(result["flags_skipped_suppressed"], 0)
+        self.assertEqual(result["flags_updated"], 0)

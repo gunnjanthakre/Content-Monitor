@@ -13,6 +13,15 @@ class ScanService:
         raw_records = self._fetch_records()
         content_items = self._upsert_content_items(raw_records)
         keywords = list(Keyword.objects.all())
+        if not keywords:
+            return {
+                "source": self.source,
+                "content_items_processed": len(content_items),
+                "keywords_active": 0,
+                "flags_created": 0,
+                "flags_updated": 0,
+                "flags_skipped_suppressed": 0,
+                }
 
         created = updated = skipped = 0
 
